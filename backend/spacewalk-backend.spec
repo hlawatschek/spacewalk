@@ -40,7 +40,7 @@ Name: spacewalk-backend
 Summary: Common programs needed to be installed on the Spacewalk servers/proxies
 Group: Applications/Internet
 License: GPLv2
-Version: 2.6.11
+Version: 2.6.32
 Release: 1%{?dist}
 URL:       https://fedorahosted.org/spacewalk
 Source0: https://fedorahosted.org/releases/s/p/spacewalk/%{name}-%{version}.tar.gz
@@ -358,15 +358,21 @@ Provides: rhns-xml-export-libs = 1:%{version}-%{release}
 %description xml-export-libs
 Libraries required by various exporting tools
 
+%if 0%{?rhel} > 5 || 0%{?fedora}
 %package cdn
 Summary: CDN tools
 Group: Applications/Internet
 Requires: %{name}-server = %{version}-%{release}
 Requires: %{name}-usix
 Requires: subscription-manager
+Requires: libxml2-python
+Requires: python-requests
+BuildRequires: libxml2-python
+BuildRequires: python-requests
 
 %description cdn
 Tools for syncing content from Red Hat CDN
+%endif
 
 %prep
 %setup -q
@@ -390,6 +396,12 @@ cp $RPM_BUILD_ROOT%{pythonrhnroot}/common/{__init__.py,usix.py} \
 cp $RPM_BUILD_ROOT%{pythonrhnroot}/common/{checksum.py,cli.py,rhn_deb.py,rhn_mpm.py,rhn_pkg.py,rhn_rpm.py,stringutils.py,fileutils.py,rhnLib.py} \
     $RPM_BUILD_ROOT%{python3rhnroot}/common
 %endif
+
+%if 0%{?rhel} && 0%{?rhel} < 6
+rm -rf $RPM_BUILD_ROOT%{pythonrhnroot}/cdn_tools
+rm -rf $RPM_BUILD_ROOT%{_bindir}/cdn-*
+%endif
+
 export PYTHON_MODULE_NAME=%{name}
 export PYTHON_MODULE_VERSION=%{version}
 %find_lang %{name}-server
@@ -418,9 +430,13 @@ export PYTHONPATH=$RPM_BUILD_ROOT%{python_sitelib}:/usr/lib/rhn:/usr/share/rhn
 spacewalk-pylint $RPM_BUILD_ROOT%{pythonrhnroot}/common \
                  $RPM_BUILD_ROOT%{pythonrhnroot}/satellite_exporter \
                  $RPM_BUILD_ROOT%{pythonrhnroot}/satellite_tools \
-                 $RPM_BUILD_ROOT%{pythonrhnroot}/cdn_tools \
                  $RPM_BUILD_ROOT%{pythonrhnroot}/upload_server \
                  $RPM_BUILD_ROOT%{pythonrhnroot}/wsgi
+
+%if 0%{?rhel} > 5 || 0%{?fedora}
+spacewalk-pylint $RPM_BUILD_ROOT%{pythonrhnroot}/cdn_tools
+%endif
+
 %endif
 
 %if 0%{?fedora} && 0%{?fedora} >= 23
@@ -766,6 +782,7 @@ rm -f %{rhnconf}/rhnSecret.py*
 %{pythonrhnroot}/satellite_tools/repo_plugins/__init__.py*
 %{pythonrhnroot}/satellite_tools/repo_plugins/yum_src.py*
 %{pythonrhnroot}/satellite_tools/repo_plugins/uln_src.py*
+%{pythonrhnroot}/satellite_tools/repo_plugins/deb_src.py*
 %config %attr(644,root,%{apache_group}) %{rhnconfigdefaults}/rhn_server_iss.conf
 %{_mandir}/man8/rhn-satellite-exporter.8*
 %{_mandir}/man8/rhn-charsets.8*
@@ -800,12 +817,144 @@ rm -f %{rhnconf}/rhnSecret.py*
 %{pythonrhnroot}/satellite_tools/exporter/exportLib.py*
 %{pythonrhnroot}/satellite_tools/exporter/xmlWriter.py*
 
+%if 0%{?rhel} > 5 || 0%{?fedora}
 %files cdn
 %attr(755,root,root) %{_bindir}/cdn-activate
 %attr(755,root,root) %{_bindir}/cdn-sync
 %{pythonrhnroot}/cdn_tools/*.py*
+%endif
 
 %changelog
+* Fri Aug 12 2016 Jan Dobes 2.6.32-1
+- set header_end to value where we stop reading
+- split maximally once or we lost part of the release sometimes
+- get package format from filename
+- check downloaded file
+- add basic plug-in for syncing deb repo
+- there are errata with intentionally empty package list, cannot skip them
+
+* Thu Aug 11 2016 Gennadii Altukhov <galt@redhat.com> 2.6.31-1
+- share repodata between yum_src and cdnsync
+
+* Tue Aug 09 2016 Gennadii Altukhov <galt@redhat.com> 2.6.30-1
+- cdn-sync - check proxy port number
+
+* Tue Aug 09 2016 Jan Dobes 2.6.29-1
+- initialize before _load_entitlements is called
+- check if there are any available channels first
+- filter channel families with ssl credentials - they are 'activated'
+- fixing listing of channels for some empty channel families
+
+* Mon Aug 08 2016 Jan Dobes 2.6.28-1
+- handle missing cdn mappings
+- W0201: attribute defined outside init
+- string.join is deprecated
+
+* Mon Aug 08 2016 Jan Dobes 2.6.27-1
+- do not download comps if not downloading packages
+- pass less parameters inside class
+- fixing --no-packages
+
+* Fri Aug 05 2016 Gennadii Altukhov <galt@redhat.com> 2.6.26-1
+- Impove error message about missing parent channels
+- cdn-sync - add debug-level verification
+- cdn-sync - add proxy url convertor from ascii to puny
+- cdn-sync - remove temporary certificates
+
+* Fri Aug 05 2016 Gennadii Altukhov <galt@redhat.com> 2.6.25-1
+- fix pep8 'Line too long'
+- bugfix - typo in variable name
+- cdn-sync - add to syncing kickstartable trees: - parameterized values for
+  rhnKSTreeType and rhnKSInstallType - possibility to select kickstartable
+  trees with NULL organisation id
+- bugfix - remove temporary file if there is an error during downloading by
+  yum-wrapper
+- cdn-sync - exclude kickstart repositories only if we have them in config file
+
+* Thu Aug 04 2016 Jan Dobes 2.6.24-1
+- handle not existing channels
+- we don't support RHEL 5 already
+
+* Wed Aug 03 2016 Jan Dobes 2.6.23-1
+- better look for existing erratum by advisory name now
+- always set advisory with version number and be different than advisory_name
+- do not crash for now
+
+* Wed Aug 03 2016 Jan Dobes 2.6.22-1
+- support strict package subscription to channel
+- fixing pep8
+- unused import
+- unused variable
+
+* Fri Jul 29 2016 Jan Dobes 2.6.21-1
+- simplify and allow to use other parameters without channel parameter
+- rename to plural to have same parameter as in satsync
+- show more info like in satsync
+- Revert "check if DB is running"
+
+* Fri Jul 29 2016 Jan Dobes 2.6.20-1
+- check if DB is running
+
+* Thu Jul 28 2016 Gennadii Altukhov <galt@redhat.com> 2.6.19-1
+- cdn-sync - add handling of database connection error
+- bugfix - Check connection to a DB is open before make commit()
+- Make reraising of exception compatible with Python 2 and 3. Additional
+  changes to commit 20ba5c63b13b2afe0a4c0340cc5538dae8f5c018
+- simplify condition
+
+* Wed Jul 27 2016 Gennadii Altukhov <galt@redhat.com> 2.6.18-1
+- build cdn-sync only for RHEL > 5 and Fedora
+- cdn-sync - add syncing of kickstart repositories - reposync now doesn't
+  terminate a program if one of channels doesn't exist - add posibility to
+  exclude some repos from syncing
+
+* Wed Jul 27 2016 Jan Dobes 2.6.17-1
+- fixing typo
+- count total time of sync
+
+* Tue Jul 26 2016 Jan Dobes 2.6.16-1
+- distinct by checksum to connect multiple packages with same nevrao to
+  erratum, not only one of them
+- fixing multiple packages in null org without channel - pick the last one
+- support syncing only RPMs metadata
+
+* Tue Jul 26 2016 Eric Herget <eherget@redhat.com> 2.6.15-1
+- 1345843 - sane output when diff of binary config files
+
+* Wed Jul 20 2016 Gennadii Altukhov <galt@redhat.com> 2.6.14-1
+- cdn-sync -  fix pylint warnings and errors
+- bug fix in cache of reposync when several repos assigned on channel
+- cdn-sync - change path for cache repodata, do not save primary.xml and
+  repomd.xml on disk
+- cdn-sync - show progress bar during updating repodata
+- cdn-sync - add number of packages to channel listing output
+- cdn-sync - Implement cdn-sync parameter for repodata updating
+- cdn-sync - Implement cdn-sync parameter for just listing assigned
+  repositories for channels
+- cdn-sync - bugfix in listing child channels. Show only those of child
+  channels which belong to channel families from manifest.
+- cdn-sync - add workaroud for missing RHN to CDN source matching * checking
+  that we have mapping in config json * if channel doesn't have at least one
+  source, skip it during syncing
+- cdn-sync - add exceptions to handling during channel import
+- cdn-sync - add parameter to print current configuration file
+- cdn-sync - add support of different debug levels for cdn-sync and reposync
+- cdn-sync - use the same config (CFG object) for cdn-sync, reposync and yum-
+  repo-plugin
+- cdn-sync - add parameters for http proxy and blocking of concurrent runs of
+  cdn-sync
+
+* Tue Jul 19 2016 Grant Gainey 2.6.13-1
+- change default checksum type to sha256 for debían packages. Usage of SHA256
+  is recommended in https://wiki.debian.org/RepositoryFormat#Size.2C_MD5sum.2C_
+  SHA1.2C_SHA256.2C_SHA512 This should also fix RH BZ 1348321
+- Fixes unnecessary removal of whitespaces in package dependencies. Needed for
+  correct creation of Packages.gz
+- 1226329 - sense support for debian packages
+
+* Mon Jul 18 2016 Jiri Dostal <jdostal@redhat.com> 2.6.12-1
+- 1357480 - get_possible_orgs function never called? -> removed
+
 * Tue Jul 12 2016 Grant Gainey 2.6.11-1
 - 1355884 - teach xmlWireSource to be able to write to tempfile
 

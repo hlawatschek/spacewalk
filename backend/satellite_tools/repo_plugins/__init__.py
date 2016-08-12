@@ -74,15 +74,15 @@ class ContentPackage:
         if self.path is None:
             raise rhnFault(50, "Unable to load package", explain=0)
         self.file = open(self.path, 'rb')
-        self.a_pkg = rhn_pkg.package_from_stream(self.file, packaging='rpm')
+        self.a_pkg = rhn_pkg.package_from_filename(self.file, self.path)
         self.a_pkg.read_header()
         self.a_pkg.payload_checksum()
         self.file.close()
 
-    def upload_package(self, channel):
+    def upload_package(self, channel, metadata_only=False):
         rel_package_path = rhnPackageUpload.relative_path_from_header(
             self.a_pkg.header, channel['org_id'],
-            self.a_pkg.checksum_type, self.a_pkg.checksum)
+            self.a_pkg.checksum_type, self.a_pkg.checksum) if not metadata_only else None
         _unused = rhnPackageUpload.push_package(self.a_pkg,
                                                 force=False,
                                                 relative_path=rel_package_path,

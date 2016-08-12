@@ -20,7 +20,7 @@ Name: spacewalk-java
 Summary: Java web application files for Spacewalk
 Group: Applications/Internet
 License: GPLv2
-Version: 2.6.15
+Version: 2.6.25
 Release: 1%{?dist}
 URL:       https://fedorahosted.org/spacewalk
 Source0:   https://fedorahosted.org/releases/s/p/spacewalk/%{name}-%{version}.tar.gz 
@@ -730,6 +730,40 @@ fi
 %{jardir}/postgresql-jdbc.jar
 
 %changelog
+* Wed Aug 10 2016 Jiri Dostal <jdostal@redhat.com> 2.6.25-1
+- 1357824 - Kickstart advanced options accept required options without argument
+- Kickstart AdvancedOptions ISE without URL
+
+* Wed Aug 10 2016 Eric Herget <eherget@redhat.com> 2.6.24-1
+- 1365530 - add system data to downloaded csv on Advanced Search page
+
+* Thu Aug 04 2016 Grant Gainey 2.6.23-1
+- 1351785 - getInputStream() reached from multiple places
+
+* Wed Aug 03 2016 Jiri Dostal <jdostal@redhat.com> 2.6.22-1
+- 1332805 - The problematic editing of kickstart profile
+
+* Wed Aug 03 2016 Jiri Dostal <jdostal@redhat.com> 2.6.21-1
+- 1332805 - The problematic editing of kickstart profile
+
+* Wed Aug 03 2016 Jiri Dostal <jdostal@redhat.com> 2.6.20-1
+- 1332805 - The problematic editing of kickstart profile
+
+* Tue Aug 02 2016 Jan Dobes 2.6.19-1
+- 1192879 - refresh list on click
+- 1192879 - use radio box instead of checkbox
+- Fixing typo "with the past year" > "within the past year""
+
+* Wed Jul 27 2016 Jiri Dostal <jdostal@redhat.com> 2.6.18-1
+- 1356173 - kickstart.profile.set_advanced_options does not update kickstart
+  file
+
+* Tue Jul 19 2016 Grant Gainey 2.6.17-1
+- 1226329 - sense support for debian packages
+
+* Tue Jul 19 2016 Jiri Dostal <jdostal@redhat.com> 2.6.16-1
+- ISE kickstart AdvancedOptions with "url" field checked but not set
+
 * Mon Jul 11 2016 Jiri Dostal <jdostal@redhat.com> 2.6.15-1
 - 1324737 - API call to get list of Systems Requiring Reboot
 

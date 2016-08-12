@@ -216,7 +216,7 @@ def get_info_for_package(pkg, channel_id, org_id):
 
     statement = """
     select p.path, cp.channel_id,
-           cv.checksum_type, cv.checksum
+           cv.checksum_type, cv.checksum, pe.epoch
       from rhnPackage p
       join rhnPackageName pn
         on p.name_id = pn.id
@@ -235,19 +235,14 @@ def get_info_for_package(pkg, channel_id, org_id):
        and %s
        and pa.label = :arch
        and %s
-     order by cp.channel_id nulls last
+     order by cp.channel_id nulls last,
+              p.id desc
     """ % (epochStatement, orgStatement)
 
     h = rhnSQL.prepare(statement)
     h.execute(**params)
 
     ret = h.fetchone_dict()
-    if not ret:
-        return {'path':          None,
-                'channel_id': None,
-                'checksum_type': None,
-                'checksum':      None,
-                }
     return ret
 
 

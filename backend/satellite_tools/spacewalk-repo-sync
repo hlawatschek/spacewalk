@@ -15,15 +15,16 @@
 # in this software or its documentation.
 #
 
-LOCK = None
 import re
 import StringIO
 import simplejson as json
 import shutil
 import sys
 import os
-import socket
 from optparse import OptionParser
+import datetime
+
+LOCK = None
 
 
 def systemExit(code, msg=None):
@@ -42,17 +43,20 @@ except ImportError:
     systemExit(1, "Unable to find code tree.\n"
                "Path not correct? " + sys.path)
 
+
 def releaseLOCK():
     global LOCK
     if LOCK:
         LOCK.release()
         LOCK = None
 
+
 def clear_interrupted_downloads():
     initCFG('server.satellite')
     pkgdir = os.path.join(CFG.MOUNT_POINT, CFG.PREPENDED_DIR, '1', 'stage')
     if os.path.exists(pkgdir):
         shutil.rmtree(pkgdir)
+
 
 def main():
 
@@ -195,6 +199,7 @@ def main():
              print " %s: %s" % (key,str(getattr(options, key)))
          return 0
 
+    total_time = datetime.timedelta()
     for ch,repo in d_ch_repo_sync.items():
 
         print "======================================"
@@ -209,7 +214,10 @@ def main():
                       no_errata=options.no_errata,
                       sync_kickstart=options.sync_kickstart,
                       latest=options.latest)
-        sync.sync()
+        elapsed_time = sync.sync()
+        total_time += elapsed_time
+
+    print("Total time: %s" % str(total_time).split('.')[0])
     releaseLOCK()
     return 0
 
